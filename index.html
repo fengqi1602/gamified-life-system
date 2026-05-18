@@ -9,113 +9,241 @@
 </head>
 <body>
     <div class="app">
-        <!-- 顶部标题 -->
-        <header class="header">
-            <h1>🎮 游戏化人生系统</h1>
-            <p class="subtitle">让行动可视化，让成长有反馈</p>
-        </header>
+        <!-- ========== Tab 1: 总览 ========== -->
+        <div class="tab-page active" id="page-home">
+            <header class="header">
+                <h1>🎮 游戏化人生系统</h1>
+                <p class="subtitle">让行动可视化，让成长有反馈</p>
+            </header>
 
-        <!-- 主面板：数值显示 -->
-        <main class="main-panel">
-            <!-- 体力值 -->
-            <div class="stat-card" id="energy-card">
-                <div class="stat-header">
-                    <span class="stat-icon">⚡</span>
-                    <span class="stat-name">体力值</span>
-                    <span class="stat-value" id="energy-value">75/100</span>
+            <main class="main-panel">
+                <div class="stat-card" id="energy-card">
+                    <div class="stat-header">
+                        <span class="stat-icon">⚡</span>
+                        <span class="stat-name">体力值</span>
+                        <span class="stat-value" id="energy-value">75/100</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="energy-bar" style="width: 75%"></div>
+                    </div>
+                    <div class="stat-status" id="energy-status">状态：正常</div>
                 </div>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="energy-bar" style="width: 75%"></div>
+
+                <div class="stat-card" id="mental-card">
+                    <div class="stat-header">
+                        <span class="stat-icon">🧠</span>
+                        <span class="stat-name">心理状态值</span>
+                        <span class="stat-value" id="mental-value">62/100</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="mental-bar" style="width: 62%"></div>
+                    </div>
+                    <div class="stat-status" id="mental-status">状态：一般</div>
                 </div>
-                <div class="stat-status" id="energy-status">状态：正常</div>
+
+                <div class="stat-card static" id="charm-card">
+                    <div class="stat-header">
+                        <span class="stat-icon">✨</span>
+                        <span class="stat-name">魅力值</span>
+                        <span class="stat-value" id="charm-value">5</span>
+                    </div>
+                    <div class="stat-note">长期属性，持续积累</div>
+                </div>
+
+                <div class="alert-box" id="alert-box" style="display: none;">
+                    <span class="alert-icon">⚠️</span>
+                    <span class="alert-text" id="alert-text"></span>
+                </div>
+            </main>
+
+            <section class="recommendations">
+                <h2>💡 今日建议</h2>
+                <div class="rec-list" id="rec-list"></div>
+            </section>
+
+            <button class="action-btn primary" id="record-btn">
+                <span class="btn-icon">+</span>
+                <span class="btn-text">记录行动</span>
+            </button>
+        </div>
+
+        <!-- ========== Tab 2: 行动 ========== -->
+        <div class="tab-page" id="page-action">
+            <header class="page-header">
+                <h2>⚡ 行动记录</h2>
+                <p class="page-subtitle" id="today-action-count">今日 0 次行动</p>
+            </header>
+
+            <button class="action-btn primary" id="record-btn-2">
+                <span class="btn-icon">+</span>
+                <span class="btn-text">记录行动</span>
+            </button>
+
+            <section class="action-history-section">
+                <h3>今日行动</h3>
+                <div class="history-list" id="action-today-list"></div>
+            </section>
+
+            <section class="action-history-section">
+                <h3>最近7天</h3>
+                <div class="history-list" id="action-week-list"></div>
+            </section>
+        </div>
+
+        <!-- ========== Tab 3: 习惯 ========== -->
+        <div class="tab-page" id="page-habit">
+            <header class="page-header">
+                <h2>🔄 习惯追踪</h2>
+                <p class="page-subtitle" id="habit-summary">坚持每一天，养成好习惯</p>
+            </header>
+
+            <div class="habit-stats" id="habit-stats">
+                <div class="habit-stat-card">
+                    <div class="habit-stat-num" id="habit-total">0</div>
+                    <div class="habit-stat-label">追踪中</div>
+                </div>
+                <div class="habit-stat-card">
+                    <div class="habit-stat-num" id="habit-done-today">0</div>
+                    <div class="habit-stat-label">今日完成</div>
+                </div>
+                <div class="habit-stat-card">
+                    <div class="habit-stat-num" id="habit-best-streak">0</div>
+                    <div class="habit-stat-label">最长连续</div>
+                </div>
             </div>
 
-            <!-- 心理状态值 -->
-            <div class="stat-card" id="mental-card">
-                <div class="stat-header">
-                    <span class="stat-icon">🧠</span>
-                    <span class="stat-name">心理状态值</span>
-                    <span class="stat-value" id="mental-value">62/100</span>
+            <div class="habit-list" id="habit-list"></div>
+
+            <button class="action-btn secondary" id="add-habit-btn">
+                <span class="btn-icon">+</span>
+                <span class="btn-text">添加习惯</span>
+            </button>
+        </div>
+
+        <!-- ========== Tab 4: 数据 ========== -->
+        <div class="tab-page" id="page-data">
+            <header class="page-header">
+                <h2>📊 数据统计</h2>
+                <p class="page-subtitle">回顾成长轨迹</p>
+            </header>
+
+            <div class="data-overview" id="data-overview">
+                <div class="data-card">
+                    <div class="data-card-label">总行动次数</div>
+                    <div class="data-card-value" id="data-total-actions">0</div>
                 </div>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="mental-bar" style="width: 62%"></div>
+                <div class="data-card">
+                    <div class="data-card-label">最常行动</div>
+                    <div class="data-card-value" id="data-top-action">-</div>
                 </div>
-                <div class="stat-status" id="mental-status">状态：一般</div>
-            </div>
-
-            <!-- 魅力值 -->
-            <div class="stat-card static" id="charm-card">
-                <div class="stat-header">
-                    <span class="stat-icon">✨</span>
-                    <span class="stat-name">魅力值</span>
-                    <span class="stat-value" id="charm-value">5</span>
+                <div class="data-card">
+                    <div class="data-card-label">连续使用天数</div>
+                    <div class="data-card-value" id="data-streak">0</div>
                 </div>
-                <div class="stat-note">长期属性，持续积累</div>
             </div>
 
-            <!-- 状态警告 -->
-            <div class="alert-box" id="alert-box" style="display: none;">
-                <span class="alert-icon">⚠️</span>
-                <span class="alert-text" id="alert-text"></span>
+            <section class="data-section">
+                <h3>近7天行动趋势</h3>
+                <div class="chart-container" id="chart-week"></div>
+            </section>
+
+            <section class="data-section">
+                <h3>行动分类分布</h3>
+                <div class="chart-container" id="chart-category"></div>
+            </section>
+
+            <section class="data-section">
+                <h3>数值变化趋势</h3>
+                <div class="chart-container" id="chart-stats"></div>
+            </section>
+        </div>
+
+        <!-- ========== 底部Tab栏 ========== -->
+        <nav class="tab-bar">
+            <div class="tab-item active" data-tab="home">
+                <span class="tab-icon">🏠</span>
+                <span class="tab-label">总览</span>
             </div>
-        </main>
-
-        <!-- 行动建议区域 -->
-        <section class="recommendations">
-            <h2>💡 今日建议</h2>
-            <div class="rec-list" id="rec-list">
-                <!-- 动态生成 -->
+            <div class="tab-item" data-tab="action">
+                <span class="tab-icon">⚡</span>
+                <span class="tab-label">行动</span>
             </div>
-        </section>
-
-        <!-- 记录行动按钮 -->
-        <button class="action-btn primary" id="record-btn">
-            <span class="btn-icon">+</span>
-            <span class="btn-text">记录行动</span>
-        </button>
-
-        <!-- 历史记录入口 -->
-        <button class="action-btn secondary" id="history-btn">
-            <span class="btn-icon">📋</span>
-            <span class="btn-text">查看历史</span>
-        </button>
+            <div class="tab-item" data-tab="habit">
+                <span class="tab-icon">🔄</span>
+                <span class="tab-label">习惯</span>
+            </div>
+            <div class="tab-item" data-tab="data">
+                <span class="tab-icon">📊</span>
+                <span class="tab-label">数据</span>
+            </div>
+        </nav>
     </div>
 
-    <!-- 行动选择弹窗 -->
+    <!-- ========== 弹窗：行动选择 ========== -->
     <div class="modal" id="action-modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>选择行动</h3>
                 <button class="close-btn" id="close-modal">&times;</button>
             </div>
-            <div class="action-categories" id="action-categories">
-                <!-- 动态生成 -->
-            </div>
+            <div class="action-categories" id="action-categories"></div>
         </div>
     </div>
 
-    <!-- 反馈弹窗 -->
+    <!-- ========== 弹窗：反馈 ========== -->
     <div class="modal" id="feedback-modal">
         <div class="modal-content feedback-content">
             <div class="feedback-icon">✅</div>
             <h3>行动已记录</h3>
-            <div class="feedback-changes" id="feedback-changes">
-                <!-- 动态生成 -->
-            </div>
+            <div class="feedback-changes" id="feedback-changes"></div>
             <div class="feedback-message" id="feedback-message"></div>
             <button class="action-btn primary" id="feedback-ok">继续</button>
         </div>
     </div>
 
-    <!-- 历史记录弹窗 -->
-    <div class="modal" id="history-modal">
+    <!-- ========== 弹窗：添加习惯 ========== -->
+    <div class="modal" id="habit-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>今日记录</h3>
-                <button class="close-btn" id="close-history">&times;</button>
+                <h3>添加新习惯</h3>
+                <button class="close-btn" id="close-habit-modal">&times;</button>
             </div>
-            <div class="history-list" id="history-list">
-                <!-- 动态生成 -->
+            <div class="habit-form">
+                <div class="form-group">
+                    <label>习惯名称</label>
+                    <input type="text" id="habit-name-input" placeholder="例如：每天喝水8杯" maxlength="20">
+                </div>
+                <div class="form-group">
+                    <label>选择图标</label>
+                    <div class="icon-picker" id="icon-picker">
+                        <span class="icon-option selected" data-icon="💧">💧</span>
+                        <span class="icon-option" data-icon="🏃">🏃</span>
+                        <span class="icon-option" data-icon="📖">📖</span>
+                        <span class="icon-option" data-icon="🎵">🎵</span>
+                        <span class="icon-option" data-icon="✍️">✍️</span>
+                        <span class="icon-option" data-icon="🧘">🧘</span>
+                        <span class="icon-option" data-icon="💊">💊</span>
+                        <span class="icon-option" data-icon="🎯">🎯</span>
+                        <span class="icon-option" data-icon="☀️">☀️</span>
+                        <span class="icon-option" data-icon="🥗">🥗</span>
+                        <span class="icon-option" data-icon="💤">💤</span>
+                        <span class="icon-option" data-icon="🧹">🧹</span>
+                    </div>
+                </div>
+                <button class="action-btn primary" id="save-habit-btn">保存习惯</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 弹窗：确认删除 ========== -->
+    <div class="modal" id="confirm-modal">
+        <div class="modal-content feedback-content">
+            <div class="feedback-icon">🗑️</div>
+            <h3 id="confirm-title">确认删除？</h3>
+            <p class="feedback-message" id="confirm-text">删除后数据无法恢复</p>
+            <div class="confirm-buttons">
+                <button class="action-btn secondary" id="confirm-cancel">取消</button>
+                <button class="action-btn primary danger" id="confirm-ok">确认删除</button>
             </div>
         </div>
     </div>

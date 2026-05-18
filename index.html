@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>游戏化人生系统</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app">
+        <!-- 顶部标题 -->
+        <header class="header">
+            <h1>🎮 游戏化人生系统</h1>
+            <p class="subtitle">让行动可视化，让成长有反馈</p>
+        </header>
+
+        <!-- 主面板：数值显示 -->
+        <main class="main-panel">
+            <!-- 体力值 -->
+            <div class="stat-card" id="energy-card">
+                <div class="stat-header">
+                    <span class="stat-icon">⚡</span>
+                    <span class="stat-name">体力值</span>
+                    <span class="stat-value" id="energy-value">75/100</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="energy-bar" style="width: 75%"></div>
+                </div>
+                <div class="stat-status" id="energy-status">状态：正常</div>
+            </div>
+
+            <!-- 心理状态值 -->
+            <div class="stat-card" id="mental-card">
+                <div class="stat-header">
+                    <span class="stat-icon">🧠</span>
+                    <span class="stat-name">心理状态值</span>
+                    <span class="stat-value" id="mental-value">62/100</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="mental-bar" style="width: 62%"></div>
+                </div>
+                <div class="stat-status" id="mental-status">状态：一般</div>
+            </div>
+
+            <!-- 魅力值 -->
+            <div class="stat-card static" id="charm-card">
+                <div class="stat-header">
+                    <span class="stat-icon">✨</span>
+                    <span class="stat-name">魅力值</span>
+                    <span class="stat-value" id="charm-value">5</span>
+                </div>
+                <div class="stat-note">长期属性，持续积累</div>
+            </div>
+
+            <!-- 状态警告 -->
+            <div class="alert-box" id="alert-box" style="display: none;">
+                <span class="alert-icon">⚠️</span>
+                <span class="alert-text" id="alert-text"></span>
+            </div>
+        </main>
+
+        <!-- 行动建议区域 -->
+        <section class="recommendations">
+            <h2>💡 今日建议</h2>
+            <div class="rec-list" id="rec-list">
+                <!-- 动态生成 -->
+            </div>
+        </section>
+
+        <!-- 记录行动按钮 -->
+        <button class="action-btn primary" id="record-btn">
+            <span class="btn-icon">+</span>
+            <span class="btn-text">记录行动</span>
+        </button>
+
+        <!-- 历史记录入口 -->
+        <button class="action-btn secondary" id="history-btn">
+            <span class="btn-icon">📋</span>
+            <span class="btn-text">查看历史</span>
+        </button>
+    </div>
+
+    <!-- 行动选择弹窗 -->
+    <div class="modal" id="action-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>选择行动</h3>
+                <button class="close-btn" id="close-modal">&times;</button>
+            </div>
+            <div class="action-categories" id="action-categories">
+                <!-- 动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 反馈弹窗 -->
+    <div class="modal" id="feedback-modal">
+        <div class="modal-content feedback-content">
+            <div class="feedback-icon">✅</div>
+            <h3>行动已记录</h3>
+            <div class="feedback-changes" id="feedback-changes">
+                <!-- 动态生成 -->
+            </div>
+            <div class="feedback-message" id="feedback-message"></div>
+            <button class="action-btn primary" id="feedback-ok">继续</button>
+        </div>
+    </div>
+
+    <!-- 历史记录弹窗 -->
+    <div class="modal" id="history-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>今日记录</h3>
+                <button class="close-btn" id="close-history">&times;</button>
+            </div>
+            <div class="history-list" id="history-list">
+                <!-- 动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

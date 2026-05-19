@@ -1,4 +1,4 @@
-// ==================== 游戏化人生系统 v2 - 核心逻辑 ====================
+// ==================== 游戏化人生系统 v3 - Phase 3 大更新 ====================
 
 // ==================== 数据定义 ====================
 
@@ -247,6 +247,235 @@ class HabitManager {
     }
 }
 
+// ==================== 目标管理 ====================
+
+class GoalManager {
+    constructor() {
+        this.load();
+    }
+
+    load() {
+        const saved = localStorage.getItem('gamified-life-goals');
+        this.goals = saved ? JSON.parse(saved) : [];
+    }
+
+    save() {
+        localStorage.setItem('gamified-life-goals', JSON.stringify(this.goals));
+    }
+
+    addGoal(name, motivation, deadline) {
+        const goal = {
+            id: Date.now().toString(),
+            name,
+            motivation: motivation || '',
+            deadline: deadline || '',
+            tasks: [],
+            createdAt: new Date().toISOString()
+        };
+        this.goals.push(goal);
+        this.save();
+        return goal;
+    }
+
+    deleteGoal(goalId) {
+        this.goals = this.goals.filter(g => g.id !== goalId);
+        this.save();
+    }
+
+    addTask(goalId, taskName) {
+        const goal = this.goals.find(g => g.id === goalId);
+        if (!goal) return null;
+        const task = {
+            id: Date.now().toString(),
+            name: taskName,
+            done: false,
+            createdAt: new Date().toISOString()
+        };
+        goal.tasks.push(task);
+        this.save();
+        return task;
+    }
+
+    deleteTask(goalId, taskId) {
+        const goal = this.goals.find(g => g.id === goalId);
+        if (!goal) return;
+        goal.tasks = goal.tasks.filter(t => t.id !== taskId);
+        this.save();
+    }
+
+    toggleTask(goalId, taskId) {
+        const goal = this.goals.find(g => g.id === goalId);
+        if (!goal) return false;
+        const task = goal.tasks.find(t => t.id === taskId);
+        if (!task) return false;
+        task.done = !task.done;
+        this.save();
+        return task.done;
+    }
+
+    getProgress(goalId) {
+        const goal = this.goals.find(g => g.id === goalId);
+        if (!goal || goal.tasks.length === 0) return 0;
+        const done = goal.tasks.filter(t => t.done).length;
+        return Math.round((done / goal.tasks.length) * 100);
+    }
+
+    isCompleted(goalId) {
+        const goal = this.goals.find(g => g.id === goalId);
+        if (!goal || goal.tasks.length === 0) return false;
+        return goal.tasks.every(t => t.done);
+    }
+
+    // 获取今日聚焦任务：未完成的目标中的未完成任务
+    getFocusTasks() {
+        const focusTasks = [];
+        for (const goal of this.goals) {
+            if (this.isCompleted(goal.id)) continue;
+            for (const task of goal.tasks) {
+                if (!task.done) {
+                    focusTasks.push({
+                        taskId: task.id,
+                        taskName: task.name,
+                        goalId: goal.id,
+                        goalName: goal.name
+                    });
+                }
+            }
+        }
+        // 最多返回5个聚焦任务
+        return focusTasks.slice(0, 5);
+    }
+
+    // 统计
+    getStats() {
+        const tracking = this.goals.length;
+        const completed = this.goals.filter(g => this.isCompleted(g.id)).length;
+        const inProgress = tracking - completed;
+        return { tracking, inProgress, completed };
+    }
+}
+
+// ==================== 财务管理 ====================
+
+class FinanceManager {
+    constructor() {
+        this.load();
+    }
+
+    load() {
+        const saved = localStorage.getItem('gamified-life-finance');
+        if (saved) {
+            const data = JSON.parse(saved);
+            this.records = data.records ?? [];
+            this.settings = data.settings ?? { balance: 0 };
+        } else {
+            this.records = [];
+            this.settings = { balance: 0 };
+        }
+    }
+
+    save() {
+        localStorage.setItem('gamified-life-finance', JSON.stringify({
+            records: this.records,
+            settings: this.settings
+        }));
+    }
+
+    addRecord(amount, category, note, type) {
+        const record = {
+            id: Date.now().toString(),
+            amount: parseFloat(amount),
+            category,
+            note: note || '',
+            type, // 'income' | 'expense'
+            timestamp: new Date().toISOString()
+        };
+
+        if (type === 'income') {
+            this.settings.balance += record.amount;
+        } else {
+            this.settings.balance -= record.amount;
+        }
+
+        this.records.unshift(record);
+        this.save();
+        return record;
+    }
+
+    getTodaySummary() {
+        const today = new Date().toDateString();
+        const todayRecords = this.records.filter(r => new Date(r.timestamp).toDateString() === today);
+        let income = 0;
+        let expense = 0;
+        todayRecords.forEach(r => {
+            if (r.type === 'income') income += r.amount;
+            else expense += r.amount;
+        });
+        return { income, expense };
+    }
+
+    getMonthSummary() {
+        const now = new Date();
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthRecords = this.records.filter(r => new Date(r.timestamp) >= monthStart);
+        let income = 0;
+        let expense = 0;
+        monthRecords.forEach(r => {
+            if (r.type === 'income') income += r.amount;
+            else expense += r.amount;
+        });
+        return { income, expense };
+    }
+
+    getBalance() {
+        return this.settings.balance;
+    }
+
+    // 获取本月每日收支数据（用于图表）
+    getMonthDailyData() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const today = now.getDate();
+
+        const dailyData = [];
+        for (let d = 1; d <= today; d++) {
+            const dateStr = new Date(year, month, d).toDateString();
+            const dayRecords = this.records.filter(r => new Date(r.timestamp).toDateString() === dateStr);
+            let income = 0;
+            let expense = 0;
+            dayRecords.forEach(r => {
+                if (r.type === 'income') income += r.amount;
+                else expense += r.amount;
+            });
+            dailyData.push({
+                day: d,
+                label: `${d}`,
+                income,
+                expense
+            });
+        }
+        return dailyData;
+    }
+
+    // 获取本月分类占比
+    getCategoryBreakdown() {
+        const now = new Date();
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthRecords = this.records.filter(r => new Date(r.timestamp) >= monthStart && r.type === 'expense');
+
+        const categories = {};
+        monthRecords.forEach(r => {
+            categories[r.category] = (categories[r.category] || 0) + r.amount;
+        });
+
+        return Object.entries(categories)
+            .sort((a, b) => b[1] - a[1])
+            .map(([category, amount]) => ({ category, amount }));
+    }
+}
+
 // ==================== 状态评估引擎 ====================
 
 class StateEvaluator {
@@ -275,8 +504,21 @@ class StateEvaluator {
 // ==================== 行动推荐引擎 ====================
 
 class RecommendationEngine {
-    static getRecommendations(state) {
+    static getRecommendations(state, focusTasks) {
         const recommendations = [];
+
+        // 如果有未完成的聚焦任务，优先推荐
+        if (focusTasks && focusTasks.length > 0) {
+            recommendations.push({
+                action: `完成: ${focusTasks[0].taskName}`,
+                reason: `目标: ${focusTasks[0].goalName}`,
+                category: '成长',
+                icon: '🎯',
+                id: 'focus-task',
+                isFocus: true
+            });
+        }
+
         if (state.energy < 20) {
             recommendations.push(
                 { action: '小睡15分钟', reason: '恢复体力', category: '恢复', icon: '😴', id: 'nap' },
@@ -311,15 +553,70 @@ class RecommendationEngine {
     }
 }
 
+// ==================== 时段感知 ====================
+
+function getGreeting() {
+    const hour = new Date().getHours();
+    if (hour >= 6 && hour < 12) return { text: '新的一天', sub: '今天想做什么？' };
+    if (hour >= 12 && hour < 18) return { text: '下午好', sub: '保持节奏' };
+    if (hour >= 18 && hour < 23) return { text: '晚上好', sub: '来做个回顾吧' };
+    return { text: '夜深了', sub: '该休息了' };
+}
+
+// ==================== 每日回顾管理 ====================
+
+class ReviewManager {
+    constructor() {
+        this.load();
+    }
+
+    load() {
+        const saved = localStorage.getItem('gamified-life-reviews');
+        this.reviews = saved ? JSON.parse(saved) : {};
+    }
+
+    save() {
+        localStorage.setItem('gamified-life-reviews', JSON.stringify(this.reviews));
+    }
+
+    hasTodayReview() {
+        const today = new Date().toDateString();
+        return !!this.reviews[today];
+    }
+
+    saveReview(data) {
+        const today = new Date().toDateString();
+        this.reviews[today] = {
+            ...data,
+            timestamp: new Date().toISOString()
+        };
+        this.save();
+    }
+
+    shouldShowReview() {
+        // 当天第一次打开且时间>18点
+        const hour = new Date().getHours();
+        if (hour < 18) return false;
+        if (this.hasTodayReview()) return false;
+        return true;
+    }
+}
+
 // ==================== UI 控制器 ====================
 
 class UIController {
-    constructor(gameState, habitManager) {
+    constructor(gameState, habitManager, goalManager, financeManager, reviewManager) {
         this.state = gameState;
         this.habits = habitManager;
+        this.goals = goalManager;
+        this.finance = financeManager;
+        this.reviews = reviewManager;
         this.currentTab = 'home';
         this.selectedHabitIcon = '💧';
         this.confirmCallback = null;
+        this.financeType = 'expense';
+        this.financeCategory = '餐饮';
+        this.addingTaskGoalId = null;
         this.init();
     }
 
@@ -328,8 +625,40 @@ class UIController {
         this.bindHomeEvents();
         this.bindActionEvents();
         this.bindHabitEvents();
+        this.bindGoalEvents();
+        this.bindFinanceEvents();
+        this.bindReviewEvents();
         this.bindModalEvents();
         this.renderAll();
+
+        // 应用财务对心理的联动
+        this.applyFinanceMentalEffect();
+
+        // 检查是否需要弹出每日回顾
+        if (this.reviews.shouldShowReview()) {
+            setTimeout(() => this.openReviewModal(), 800);
+        }
+    }
+
+    // ========== 财务联动心理 ==========
+    applyFinanceMentalEffect() {
+        const balance = this.finance.getBalance();
+        // 仅在首次加载时应用，不重复叠加
+        // 存储上次应用的余额，避免每次刷新都叠加
+        const lastAppliedBalance = parseFloat(sessionStorage.getItem('finance-mental-applied') || '0');
+        if (lastAppliedBalance === balance) return;
+
+        // 计算差值
+        let mentalDelta = 0;
+        if (balance > 5000) mentalDelta = 5;
+        else if (balance < 0) mentalDelta = -10;
+        else if (balance < 1000) mentalDelta = -5;
+
+        if (mentalDelta !== 0) {
+            this.state.mental = Math.max(0, Math.min(100, this.state.mental + mentalDelta));
+            this.state.save();
+        }
+        sessionStorage.setItem('finance-mental-applied', balance.toString());
     }
 
     // ========== Tab 切换 ==========
@@ -375,12 +704,22 @@ class UIController {
     // ========== 总览页 ==========
     bindHomeEvents() {
         document.getElementById('record-btn').addEventListener('click', () => this.openActionModal());
+        document.getElementById('finance-quick-add-btn').addEventListener('click', () => this.openFinanceModal());
     }
 
     renderHome() {
+        this.renderGreeting();
         this.renderStats();
         this.renderAlert();
+        this.renderFinanceOverview();
+        this.renderDailyFocus();
         this.renderRecommendations();
+    }
+
+    renderGreeting() {
+        const greeting = getGreeting();
+        document.getElementById('greeting-text').textContent = greeting.text;
+        document.getElementById('greeting-sub').textContent = greeting.sub;
     }
 
     renderStats() {
@@ -424,11 +763,60 @@ class UIController {
         }
     }
 
+    renderFinanceOverview() {
+        const summary = this.finance.getTodaySummary();
+        const balance = this.finance.getBalance();
+        document.getElementById('finance-today-income').textContent = `+${summary.income.toFixed(2)}`;
+        document.getElementById('finance-today-expense').textContent = `-${summary.expense.toFixed(2)}`;
+        document.getElementById('finance-balance').textContent = balance.toFixed(2);
+    }
+
+    renderDailyFocus() {
+        const container = document.getElementById('daily-focus-list');
+        const focusTasks = this.goals.getFocusTasks();
+
+        if (focusTasks.length === 0) {
+            container.innerHTML = '<div class="daily-focus-empty">暂无聚焦任务，在习惯页添加目标开始吧</div>';
+            return;
+        }
+
+        container.innerHTML = focusTasks.map(ft => {
+            const task = this.findTask(ft.goalId, ft.taskId);
+            const isDone = task ? task.done : false;
+            return `
+                <div class="daily-focus-item ${isDone ? 'done' : ''}" data-goal-id="${ft.goalId}" data-task-id="${ft.taskId}">
+                    <div class="daily-focus-check" data-goal-id="${ft.goalId}" data-task-id="${ft.taskId}">${isDone ? '✓' : ''}</div>
+                    <span class="daily-focus-task-name">${ft.taskName}</span>
+                    <span class="daily-focus-goal-name">${ft.goalName}</span>
+                </div>
+            `;
+        }).join('');
+
+        // 绑定勾选事件
+        container.querySelectorAll('.daily-focus-check').forEach(check => {
+            check.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const goalId = check.dataset.goalId;
+                const taskId = check.dataset.taskId;
+                this.goals.toggleTask(goalId, taskId);
+                this.renderDailyFocus();
+                this.renderGoals();
+            });
+        });
+    }
+
+    findTask(goalId, taskId) {
+        const goal = this.goals.goals.find(g => g.id === goalId);
+        if (!goal) return null;
+        return goal.tasks.find(t => t.id === taskId);
+    }
+
     renderRecommendations() {
         const container = document.getElementById('rec-list');
-        const recommendations = RecommendationEngine.getRecommendations(this.state);
+        const focusTasks = this.goals.getFocusTasks();
+        const recommendations = RecommendationEngine.getRecommendations(this.state, focusTasks);
         container.innerHTML = recommendations.map(rec => `
-            <div class="rec-item" data-action-id="${rec.id}">
+            <div class="rec-item" data-action-id="${rec.id}" ${rec.isFocus ? `data-focus-goal-id="${focusTasks[0]?.goalId}" data-focus-task-id="${focusTasks[0]?.taskId}"` : ''}>
                 <span class="rec-icon">${rec.icon}</span>
                 <span class="rec-text">${rec.action} - ${rec.reason}</span>
                 <span class="rec-tag ${rec.category}">${rec.category}</span>
@@ -437,7 +825,13 @@ class UIController {
 
         container.querySelectorAll('.rec-item').forEach(item => {
             item.addEventListener('click', () => {
-                this.performAction(item.dataset.actionId);
+                if (item.dataset.focusGoalId) {
+                    // 聚焦任务：直接标记完成
+                    this.goals.toggleTask(item.dataset.focusGoalId, item.dataset.focusTaskId);
+                    this.renderAll();
+                } else {
+                    this.performAction(item.dataset.actionId);
+                }
             });
         });
     }
@@ -538,46 +932,334 @@ class UIController {
         const container = document.getElementById('habit-list');
         if (habits.length === 0) {
             container.innerHTML = '<div class="empty-state"><p>还没有追踪任何习惯</p><p>点击下方"添加习惯"开始吧</p></div>';
+        } else {
+            container.innerHTML = habits.map(habit => {
+                const checked = this.habits.isCheckedToday(habit.id);
+                const streak = this.habits.getStreak(habit.id);
+                return `
+                    <div class="habit-item ${checked ? 'checked' : ''}" data-habit-id="${habit.id}">
+                        <div class="habit-check" data-habit-id="${habit.id}">${checked ? '✓' : ''}</div>
+                        <div class="habit-info">
+                            <div class="habit-name">${habit.icon} ${habit.name}</div>
+                            <div class="habit-streak">${streak > 0 ? `连续 <span>${streak}</span> 天` : '尚未开始'}</div>
+                        </div>
+                        <button class="habit-delete" data-habit-id="${habit.id}" title="删除习惯">✕</button>
+                    </div>
+                `;
+            }).join('');
+
+            // 绑定打卡事件
+            container.querySelectorAll('.habit-check').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const habitId = btn.dataset.habitId;
+                    this.habits.toggleCheckIn(habitId);
+                    this.renderHabitPage();
+                });
+            });
+
+            // 绑定删除事件
+            container.querySelectorAll('.habit-delete').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const habitId = btn.dataset.habitId;
+                    const habit = this.habits.habits.find(h => h.id === habitId);
+                    this.showConfirm(`删除习惯"${habit.name}"？`, '删除后打卡记录将无法恢复', () => {
+                        this.habits.deleteHabit(habitId);
+                        this.renderHabitPage();
+                    });
+                });
+            });
+        }
+
+        // 渲染目标
+        this.renderGoals();
+    }
+
+    // ========== 目标管理 ==========
+    bindGoalEvents() {
+        // 添加目标
+        document.getElementById('add-goal-btn').addEventListener('click', () => {
+            document.getElementById('goal-name-input').value = '';
+            document.getElementById('goal-motivation-input').value = '';
+            document.getElementById('goal-deadline-input').value = '';
+            this.openModal('goal-modal');
+        });
+
+        document.getElementById('save-goal-btn').addEventListener('click', () => {
+            const name = document.getElementById('goal-name-input').value.trim();
+            if (!name) {
+                document.getElementById('goal-name-input').style.borderColor = 'var(--danger)';
+                setTimeout(() => document.getElementById('goal-name-input').style.borderColor = '', 1500);
+                return;
+            }
+            const motivation = document.getElementById('goal-motivation-input').value.trim();
+            const deadline = document.getElementById('goal-deadline-input').value;
+            this.goals.addGoal(name, motivation, deadline);
+            this.closeModal('goal-modal');
+            this.renderGoals();
+        });
+
+        // 添加任务
+        document.getElementById('save-task-btn').addEventListener('click', () => {
+            const name = document.getElementById('task-name-input').value.trim();
+            const goalId = document.getElementById('task-goal-select').value;
+            if (!name) {
+                document.getElementById('task-name-input').style.borderColor = 'var(--danger)';
+                setTimeout(() => document.getElementById('task-name-input').style.borderColor = '', 1500);
+                return;
+            }
+            if (!goalId) {
+                document.getElementById('task-goal-select').style.borderColor = 'var(--danger)';
+                setTimeout(() => document.getElementById('task-goal-select').style.borderColor = '', 1500);
+                return;
+            }
+            this.goals.addTask(goalId, name);
+            this.closeModal('task-modal');
+            this.renderGoals();
+            this.renderDailyFocus();
+        });
+    }
+
+    renderGoals() {
+        const stats = this.goals.getStats();
+        document.getElementById('goal-tracking').textContent = stats.tracking;
+        document.getElementById('goal-in-progress').textContent = stats.inProgress;
+        document.getElementById('goal-completed').textContent = stats.completed;
+
+        const container = document.getElementById('goals-list');
+        const goals = this.goals.goals;
+
+        if (goals.length === 0) {
+            container.innerHTML = '<div class="empty-state"><p>还没有设定任何目标</p><p>点击"添加目标"开始规划吧</p></div>';
             return;
         }
 
-        container.innerHTML = habits.map(habit => {
-            const checked = this.habits.isCheckedToday(habit.id);
-            const streak = this.habits.getStreak(habit.id);
+        container.innerHTML = goals.map(goal => {
+            const progress = this.goals.getProgress(goal.id);
+            const isCompleted = this.goals.isCompleted(goal.id);
+            const deadlineStr = goal.deadline ? this.formatDeadline(goal.deadline) : '';
+
             return `
-                <div class="habit-item ${checked ? 'checked' : ''}" data-habit-id="${habit.id}">
-                    <div class="habit-check" data-habit-id="${habit.id}">${checked ? '✓' : ''}</div>
-                    <div class="habit-info">
-                        <div class="habit-name">${habit.icon} ${habit.name}</div>
-                        <div class="habit-streak">${streak > 0 ? `连续 <span>${streak}</span> 天` : '尚未开始'}</div>
+                <div class="goal-card ${isCompleted ? 'completed' : ''}" data-goal-id="${goal.id}">
+                    <div class="goal-card-header">
+                        <span class="goal-card-name">${isCompleted ? '✅ ' : ''}${goal.name}</span>
+                        <button class="goal-card-delete" data-goal-id="${goal.id}" title="删除目标">✕</button>
                     </div>
-                    <button class="habit-delete" data-habit-id="${habit.id}" title="删除习惯">✕</button>
+                    ${goal.motivation ? `<div class="goal-card-motivation">"${goal.motivation}"</div>` : ''}
+                    <div class="goal-card-meta">
+                        ${deadlineStr ? `<span class="goal-card-deadline">📅 ${deadlineStr}</span>` : ''}
+                        <span>${goal.tasks.length} 个任务</span>
+                    </div>
+                    <div class="goal-card-progress">
+                        <div class="goal-progress-bar">
+                            <div class="goal-progress-fill" style="width: ${progress}%"></div>
+                        </div>
+                        <span class="goal-progress-text">${progress}%</span>
+                    </div>
+                    <div class="goal-card-tasks">
+                        ${goal.tasks.map(task => `
+                            <div class="goal-task-item ${task.done ? 'done' : ''}">
+                                <div class="goal-task-check" data-goal-id="${goal.id}" data-task-id="${task.id}">${task.done ? '✓' : ''}</div>
+                                <span class="goal-task-name">${task.name}</span>
+                                <button class="goal-task-delete" data-goal-id="${goal.id}" data-task-id="${task.id}" title="删除任务">✕</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                    ${!isCompleted ? `<button class="goal-add-task-btn" data-goal-id="${goal.id}">+ 添加任务</button>` : ''}
                 </div>
             `;
         }).join('');
 
-        // 绑定打卡事件
-        container.querySelectorAll('.habit-check').forEach(btn => {
+        // 绑定删除目标事件
+        container.querySelectorAll('.goal-card-delete').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const habitId = btn.dataset.habitId;
-                this.habits.toggleCheckIn(habitId);
-                this.renderHabitPage();
-            });
-        });
-
-        // 绑定删除事件
-        container.querySelectorAll('.habit-delete').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const habitId = btn.dataset.habitId;
-                const habit = this.habits.habits.find(h => h.id === habitId);
-                this.showConfirm(`删除习惯"${habit.name}"？`, '删除后打卡记录将无法恢复', () => {
-                    this.habits.deleteHabit(habitId);
-                    this.renderHabitPage();
+                const goalId = btn.dataset.goalId;
+                const goal = this.goals.goals.find(g => g.id === goalId);
+                this.showConfirm(`删除目标"${goal.name}"？`, '删除后所有任务也将被删除', () => {
+                    this.goals.deleteGoal(goalId);
+                    this.renderGoals();
+                    this.renderDailyFocus();
                 });
             });
         });
+
+        // 绑定任务勾选事件
+        container.querySelectorAll('.goal-task-check').forEach(check => {
+            check.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.goals.toggleTask(check.dataset.goalId, check.dataset.taskId);
+                this.renderGoals();
+                this.renderDailyFocus();
+            });
+        });
+
+        // 绑定删除任务事件
+        container.querySelectorAll('.goal-task-delete').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.goals.deleteTask(btn.dataset.goalId, btn.dataset.taskId);
+                this.renderGoals();
+                this.renderDailyFocus();
+            });
+        });
+
+        // 绑定添加任务按钮
+        container.querySelectorAll('.goal-add-task-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.openTaskModal(btn.dataset.goalId);
+            });
+        });
+    }
+
+    formatDeadline(dateStr) {
+        const deadline = new Date(dateStr);
+        const now = new Date();
+        const diffDays = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24));
+
+        if (diffDays < 0) return `已过期 ${Math.abs(diffDays)} 天`;
+        if (diffDays === 0) return '今天截止';
+        if (diffDays === 1) return '明天截止';
+        if (diffDays <= 7) return `${diffDays} 天后截止`;
+        return `${deadline.getMonth() + 1}/${deadline.getDate()}`;
+    }
+
+    openTaskModal(goalId) {
+        this.addingTaskGoalId = goalId;
+        document.getElementById('task-name-input').value = '';
+
+        // 填充目标选择
+        const select = document.getElementById('task-goal-select');
+        select.innerHTML = '<option value="">选择关联目标</option>';
+        this.goals.goals.forEach(g => {
+            const opt = document.createElement('option');
+            opt.value = g.id;
+            opt.textContent = g.name;
+            if (g.id === goalId) opt.selected = true;
+            select.appendChild(opt);
+        });
+
+        this.openModal('task-modal');
+    }
+
+    // ========== 财务管理 ==========
+    bindFinanceEvents() {
+        // 收支类型切换
+        document.querySelectorAll('.finance-type-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.finance-type-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.financeType = btn.dataset.type;
+                this.updateFinanceCategoryGrid();
+            });
+        });
+
+        // 分类选择
+        document.querySelectorAll('.finance-cat-option').forEach(opt => {
+            opt.addEventListener('click', () => {
+                document.querySelectorAll('.finance-cat-option').forEach(o => o.classList.remove('selected'));
+                opt.classList.add('selected');
+                this.financeCategory = opt.dataset.category;
+            });
+        });
+
+        // 保存记录
+        document.getElementById('save-finance-btn').addEventListener('click', () => {
+            const amount = parseFloat(document.getElementById('finance-amount-input').value);
+            if (!amount || amount <= 0) {
+                document.getElementById('finance-amount-input').style.borderColor = 'var(--danger)';
+                setTimeout(() => document.getElementById('finance-amount-input').style.borderColor = '', 1500);
+                return;
+            }
+            const note = document.getElementById('finance-note-input').value.trim();
+            this.finance.addRecord(amount, this.financeCategory, note, this.financeType);
+            this.closeModal('finance-modal');
+            document.getElementById('finance-amount-input').value = '';
+            document.getElementById('finance-note-input').value = '';
+
+            // 重新应用财务联动
+            sessionStorage.removeItem('finance-mental-applied');
+            this.applyFinanceMentalEffect();
+
+            this.renderAll();
+        });
+    }
+
+    updateFinanceCategoryGrid() {
+        const grid = document.getElementById('finance-category-grid');
+        if (this.financeType === 'income') {
+            grid.innerHTML = '<div class="finance-cat-option selected" data-category="收入">💰<span>收入</span></div>';
+        } else {
+            grid.innerHTML = `
+                <div class="finance-cat-option selected" data-category="餐饮">🍽️<span>餐饮</span></div>
+                <div class="finance-cat-option" data-category="交通">🚌<span>交通</span></div>
+                <div class="finance-cat-option" data-category="购物">🛒<span>购物</span></div>
+                <div class="finance-cat-option" data-category="娱乐">🎮<span>娱乐</span></div>
+                <div class="finance-cat-option" data-category="其他">📌<span>其他</span></div>
+            `;
+        }
+        this.financeCategory = grid.querySelector('.finance-cat-option.selected')?.dataset.category || '餐饮';
+
+        // 重新绑定分类选择事件
+        grid.querySelectorAll('.finance-cat-option').forEach(opt => {
+            opt.addEventListener('click', () => {
+                grid.querySelectorAll('.finance-cat-option').forEach(o => o.classList.remove('selected'));
+                opt.classList.add('selected');
+                this.financeCategory = opt.dataset.category;
+            });
+        });
+    }
+
+    openFinanceModal() {
+        this.financeType = 'expense';
+        this.financeCategory = '餐饮';
+        document.querySelectorAll('.finance-type-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector('.finance-type-btn[data-type="expense"]').classList.add('active');
+        this.updateFinanceCategoryGrid();
+        document.getElementById('finance-amount-input').value = '';
+        document.getElementById('finance-note-input').value = '';
+        this.openModal('finance-modal');
+    }
+
+    // ========== 每日回顾 ==========
+    bindReviewEvents() {
+        // 滑块实时更新
+        document.getElementById('review-energy-slider').addEventListener('input', (e) => {
+            document.getElementById('review-energy-value').textContent = e.target.value;
+        });
+        document.getElementById('review-mental-slider').addEventListener('input', (e) => {
+            document.getElementById('review-mental-value').textContent = e.target.value;
+        });
+
+        // 保存回顾
+        document.getElementById('save-review-btn').addEventListener('click', () => {
+            const data = {
+                best: document.getElementById('review-best-input').value.trim(),
+                energy: parseInt(document.getElementById('review-energy-slider').value),
+                mental: parseInt(document.getElementById('review-mental-slider').value),
+                plan: document.getElementById('review-plan-input').value.trim()
+            };
+            this.reviews.saveReview(data);
+
+            // 用回顾数据更新状态
+            this.state.energy = data.energy;
+            this.state.mental = data.mental;
+            this.state.save();
+
+            this.closeModal('review-modal');
+            this.renderAll();
+        });
+    }
+
+    openReviewModal() {
+        document.getElementById('review-best-input').value = '';
+        document.getElementById('review-energy-slider').value = this.state.energy;
+        document.getElementById('review-energy-value').textContent = this.state.energy;
+        document.getElementById('review-mental-slider').value = this.state.mental;
+        document.getElementById('review-mental-value').textContent = this.state.mental;
+        document.getElementById('review-plan-input').value = '';
+        this.openModal('review-modal');
     }
 
     // ========== 数据统计页 ==========
@@ -606,6 +1288,9 @@ class UIController {
 
         // 数值变化趋势
         this.renderStatsChart();
+
+        // 财务统计
+        this.renderFinanceStats();
     }
 
     renderWeekChart() {
@@ -726,6 +1411,86 @@ class UIController {
         `;
     }
 
+    // ========== 财务统计图表 ==========
+    renderFinanceStats() {
+        const monthSummary = this.finance.getMonthSummary();
+        document.getElementById('finance-month-income').textContent = `+${monthSummary.income.toFixed(2)}`;
+        document.getElementById('finance-month-expense').textContent = `-${monthSummary.expense.toFixed(2)}`;
+
+        // 收支趋势图
+        this.renderFinanceChart();
+
+        // 分类占比
+        this.renderFinanceCategoryBreakdown();
+    }
+
+    renderFinanceChart() {
+        const container = document.getElementById('chart-finance');
+        const dailyData = this.finance.getMonthDailyData();
+
+        if (dailyData.length === 0) {
+            container.innerHTML = '<div class="empty-state"><p>记录收支后显示趋势图</p></div>';
+            return;
+        }
+
+        const maxVal = Math.max(
+            ...dailyData.map(d => Math.max(d.income, d.expense)),
+            1
+        );
+
+        // 只显示最近14天（避免太拥挤）
+        const displayData = dailyData.slice(-14);
+
+        container.innerHTML = `
+            <div class="finance-bar-chart">
+                ${displayData.map(d => `
+                    <div class="finance-bar-group">
+                        <div class="finance-bar-pair">
+                            <div class="finance-bar income-bar" style="height: ${Math.max((d.income / maxVal) * 100, 3)}%" title="收入: ${d.income.toFixed(0)}"></div>
+                            <div class="finance-bar expense-bar" style="height: ${Math.max((d.expense / maxVal) * 100, 3)}%" title="支出: ${d.expense.toFixed(0)}"></div>
+                        </div>
+                        <div class="finance-bar-label">${d.label}</div>
+                    </div>
+                `).join('')}
+            </div>
+            <div class="finance-chart-legend">
+                <div class="finance-legend-item">
+                    <div class="finance-legend-dot income"></div>
+                    <span>收入</span>
+                </div>
+                <div class="finance-legend-item">
+                    <div class="finance-legend-dot expense"></div>
+                    <span>支出</span>
+                </div>
+            </div>
+        `;
+    }
+
+    renderFinanceCategoryBreakdown() {
+        const container = document.getElementById('finance-category-breakdown');
+        const breakdown = this.finance.getCategoryBreakdown();
+
+        if (breakdown.length === 0) {
+            container.innerHTML = '';
+            return;
+        }
+
+        const maxAmount = Math.max(...breakdown.map(b => b.amount), 1);
+
+        container.innerHTML = `
+            <div class="finance-breakdown-title">支出分类占比</div>
+            ${breakdown.map(b => `
+                <div class="finance-breakdown-row">
+                    <span class="finance-breakdown-label">${b.category}</span>
+                    <div class="finance-breakdown-bar">
+                        <div class="finance-breakdown-fill" style="width: ${(b.amount / maxAmount * 100).toFixed(0)}%"></div>
+                    </div>
+                    <span class="finance-breakdown-amount">${b.amount.toFixed(0)}</span>
+                </div>
+            `).join('')}
+        `;
+    }
+
     // ========== 行动弹窗 ==========
     openActionModal() {
         const container = document.getElementById('action-categories');
@@ -826,6 +1591,10 @@ class UIController {
     bindModalEvents() {
         document.getElementById('close-modal').addEventListener('click', () => this.closeModal('action-modal'));
         document.getElementById('close-habit-modal').addEventListener('click', () => this.closeModal('habit-modal'));
+        document.getElementById('close-goal-modal').addEventListener('click', () => this.closeModal('goal-modal'));
+        document.getElementById('close-task-modal').addEventListener('click', () => this.closeModal('task-modal'));
+        document.getElementById('close-finance-modal').addEventListener('click', () => this.closeModal('finance-modal'));
+        document.getElementById('close-review-modal').addEventListener('click', () => this.closeModal('review-modal'));
         document.getElementById('feedback-ok').addEventListener('click', () => this.closeModal('feedback-modal'));
         document.getElementById('confirm-cancel').addEventListener('click', () => this.closeModal('confirm-modal'));
         document.getElementById('confirm-ok').addEventListener('click', () => {
@@ -837,7 +1606,7 @@ class UIController {
         });
 
         // 点击背景关闭
-        ['action-modal', 'feedback-modal', 'habit-modal', 'confirm-modal'].forEach(id => {
+        ['action-modal', 'feedback-modal', 'habit-modal', 'confirm-modal', 'goal-modal', 'task-modal', 'finance-modal', 'review-modal'].forEach(id => {
             document.getElementById(id).addEventListener('click', (e) => {
                 if (e.target.id === id) this.closeModal(id);
             });
@@ -858,11 +1627,17 @@ class UIController {
 document.addEventListener('DOMContentLoaded', () => {
     const gameState = new GameState();
     const habitManager = new HabitManager();
-    const ui = new UIController(gameState, habitManager);
+    const goalManager = new GoalManager();
+    const financeManager = new FinanceManager();
+    const reviewManager = new ReviewManager();
+    const ui = new UIController(gameState, habitManager, goalManager, financeManager, reviewManager);
 
     window.gameState = gameState;
     window.habitManager = habitManager;
+    window.goalManager = goalManager;
+    window.financeManager = financeManager;
+    window.reviewManager = reviewManager;
     window.ui = ui;
 
-    console.log('🎮 游戏化人生系统 v2 已启动');
+    console.log('🎮 游戏化人生系统 v3 (Phase 3) 已启动');
 });

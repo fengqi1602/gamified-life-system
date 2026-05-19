@@ -16,6 +16,12 @@
                 <p class="subtitle">让行动可视化，让成长有反馈</p>
             </header>
 
+            <!-- 时段问候语 -->
+            <div class="greeting-area" id="greeting">
+                <div class="greeting-text" id="greeting-text">新的一天</div>
+                <div class="greeting-sub" id="greeting-sub">今天想做什么？</div>
+            </div>
+
             <main class="main-panel">
                 <div class="stat-card" id="energy-card">
                     <div class="stat-header">
@@ -55,6 +61,39 @@
                     <span class="alert-text" id="alert-text"></span>
                 </div>
             </main>
+
+            <!-- 财务快览卡片 -->
+            <div class="finance-overview-card" id="finance-overview-card">
+                <div class="finance-overview-header">
+                    <span class="finance-overview-title">💰 今日财务</span>
+                    <button class="finance-quick-add" id="finance-quick-add-btn">+ 记一笔</button>
+                </div>
+                <div class="finance-overview-row">
+                    <div class="finance-overview-item income">
+                        <div class="finance-overview-label">收入</div>
+                        <div class="finance-overview-value" id="finance-today-income">+0.00</div>
+                    </div>
+                    <div class="finance-overview-divider"></div>
+                    <div class="finance-overview-item expense">
+                        <div class="finance-overview-label">支出</div>
+                        <div class="finance-overview-value" id="finance-today-expense">-0.00</div>
+                    </div>
+                    <div class="finance-overview-divider"></div>
+                    <div class="finance-overview-item balance">
+                        <div class="finance-overview-label">余额</div>
+                        <div class="finance-overview-value" id="finance-balance">0.00</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 每日聚焦 -->
+            <div class="daily-focus" id="daily-focus">
+                <div class="daily-focus-header">
+                    <span class="daily-focus-icon">🎯</span>
+                    <span class="daily-focus-title">今日聚焦</span>
+                </div>
+                <div class="daily-focus-list" id="daily-focus-list"></div>
+            </div>
 
             <section class="recommendations">
                 <h2>💡 今日建议</h2>
@@ -118,6 +157,34 @@
                 <span class="btn-icon">+</span>
                 <span class="btn-text">添加习惯</span>
             </button>
+
+            <!-- 目标管理区域 -->
+            <section class="goals-section" id="goals-section">
+                <div class="goals-header">
+                    <h3>🎯 目标管理</h3>
+                    <button class="action-btn secondary small" id="add-goal-btn">
+                        <span class="btn-icon">+</span>
+                        <span class="btn-text">添加目标</span>
+                    </button>
+                </div>
+
+                <div class="goal-stats" id="goal-stats">
+                    <div class="goal-stat-card">
+                        <div class="goal-stat-num" id="goal-tracking">0</div>
+                        <div class="goal-stat-label">追踪中</div>
+                    </div>
+                    <div class="goal-stat-card">
+                        <div class="goal-stat-num" id="goal-in-progress">0</div>
+                        <div class="goal-stat-label">进行中</div>
+                    </div>
+                    <div class="goal-stat-card">
+                        <div class="goal-stat-num" id="goal-completed">0</div>
+                        <div class="goal-stat-label">已完成</div>
+                    </div>
+                </div>
+
+                <div class="goals-list" id="goals-list"></div>
+            </section>
         </div>
 
         <!-- ========== Tab 4: 数据 ========== -->
@@ -155,6 +222,27 @@
             <section class="data-section">
                 <h3>数值变化趋势</h3>
                 <div class="chart-container" id="chart-stats"></div>
+            </section>
+
+            <!-- 财务统计区域 -->
+            <section class="data-section finance-section" id="finance-section">
+                <h3>💰 本月财务统计</h3>
+                <div class="finance-month-summary" id="finance-month-summary">
+                    <div class="finance-month-item">
+                        <div class="finance-month-label">本月收入</div>
+                        <div class="finance-month-value income" id="finance-month-income">+0.00</div>
+                    </div>
+                    <div class="finance-month-item">
+                        <div class="finance-month-label">本月支出</div>
+                        <div class="finance-month-value expense" id="finance-month-expense">-0.00</div>
+                    </div>
+                </div>
+
+                <div class="chart-container" id="chart-finance">
+                    <div class="empty-state"><p>记录收支后显示趋势图</p></div>
+                </div>
+
+                <div class="finance-category-breakdown" id="finance-category-breakdown"></div>
             </section>
         </div>
 
@@ -244,6 +332,132 @@
             <div class="confirm-buttons">
                 <button class="action-btn secondary" id="confirm-cancel">取消</button>
                 <button class="action-btn primary danger" id="confirm-ok">确认删除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 弹窗：添加目标 ========== -->
+    <div class="modal" id="goal-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>添加新目标</h3>
+                <button class="close-btn" id="close-goal-modal">&times;</button>
+            </div>
+            <div class="goal-form">
+                <div class="form-group">
+                    <label>目标名称</label>
+                    <input type="text" id="goal-name-input" placeholder="例如：学会吉他弹唱" maxlength="30">
+                </div>
+                <div class="form-group">
+                    <label>动机 / 愿景</label>
+                    <input type="text" id="goal-motivation-input" placeholder="为什么想达成这个目标？" maxlength="50">
+                </div>
+                <div class="form-group">
+                    <label>截止日期</label>
+                    <input type="date" id="goal-deadline-input">
+                </div>
+                <button class="action-btn primary" id="save-goal-btn">创建目标</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 弹窗：添加任务 ========== -->
+    <div class="modal" id="task-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>添加任务</h3>
+                <button class="close-btn" id="close-task-modal">&times;</button>
+            </div>
+            <div class="task-form">
+                <div class="form-group">
+                    <label>任务名称</label>
+                    <input type="text" id="task-name-input" placeholder="例如：完成第一课练习" maxlength="30">
+                </div>
+                <div class="form-group">
+                    <label>关联目标</label>
+                    <select id="task-goal-select">
+                        <option value="">选择关联目标</option>
+                    </select>
+                </div>
+                <button class="action-btn primary" id="save-task-btn">添加任务</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 弹窗：记账 ========== -->
+    <div class="modal" id="finance-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>记一笔</h3>
+                <button class="close-btn" id="close-finance-modal">&times;</button>
+            </div>
+            <div class="finance-form">
+                <div class="finance-type-toggle">
+                    <button class="finance-type-btn active" data-type="expense">支出</button>
+                    <button class="finance-type-btn" data-type="income">收入</button>
+                </div>
+                <div class="form-group">
+                    <label>金额</label>
+                    <input type="number" id="finance-amount-input" placeholder="0.00" step="0.01" min="0" inputmode="decimal">
+                </div>
+                <div class="form-group">
+                    <label>分类</label>
+                    <div class="finance-category-grid" id="finance-category-grid">
+                        <div class="finance-cat-option selected" data-category="餐饮">🍽️<span>餐饮</span></div>
+                        <div class="finance-cat-option" data-category="交通">🚌<span>交通</span></div>
+                        <div class="finance-cat-option" data-category="购物">🛒<span>购物</span></div>
+                        <div class="finance-cat-option" data-category="娱乐">🎮<span>娱乐</span></div>
+                        <div class="finance-cat-option" data-category="其他">📌<span>其他</span></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>备注</label>
+                    <input type="text" id="finance-note-input" placeholder="可选备注" maxlength="30">
+                </div>
+                <button class="action-btn primary" id="save-finance-btn">保存记录</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 弹窗：每日回顾 ========== -->
+    <div class="modal" id="review-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🌙 每日回顾</h3>
+                <button class="close-btn" id="close-review-modal">&times;</button>
+            </div>
+            <div class="review-form">
+                <div class="form-group">
+                    <label>今日最佳时刻</label>
+                    <input type="text" id="review-best-input" placeholder="今天最棒的事情是？" maxlength="50">
+                </div>
+                <div class="form-group">
+                    <label>体力评估</label>
+                    <div class="slider-group">
+                        <input type="range" id="review-energy-slider" min="0" max="100" value="50" class="neon-slider">
+                        <div class="slider-labels">
+                            <span>透支</span>
+                            <span class="slider-value" id="review-energy-value">50</span>
+                            <span>充沛</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>心理评估</label>
+                    <div class="slider-group">
+                        <input type="range" id="review-mental-slider" min="0" max="100" value="50" class="neon-slider">
+                        <div class="slider-labels">
+                            <span>低落</span>
+                            <span class="slider-value" id="review-mental-value">50</span>
+                            <span>积极</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>明日计划</label>
+                    <textarea id="review-plan-input" placeholder="明天想做什么？" rows="3" maxlength="100"></textarea>
+                </div>
+                <button class="action-btn primary" id="save-review-btn">保存回顾</button>
             </div>
         </div>
     </div>
